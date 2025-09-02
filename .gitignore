@@ -28,7 +28,7 @@ logs/
 # Data & models
 data/
 models/
-assets/
+
 
 # Environment/config
 .env.local
@@ -39,3 +39,7 @@ secrets.json
 .vscode/
 .idea/
 *.swp
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
