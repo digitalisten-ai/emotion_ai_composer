@@ -70,15 +70,13 @@ Runs at: [http://localhost:5173](http://localhost:5173)
 
 ## 🌐 Deployment
 
-### Backend (Render)
-1. Push project to GitHub
-2. Create a new **Web Service** in Render
-3. Set **Root Directory** = `backend`
-4. Start command:
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 10000
-   ```
-5. Add environment variables if needed
+### Backend (Hugging Face Spaces)
+1. Create a new Space on [Hugging Face](https://huggingface.co/spaces)  
+2. Choose **Docker template**  
+3. Clone your Space locally  
+4. Copy backend files (`main.py`, `inference.py`, `models/`, `assets/`, `requirements.txt`, `Dockerfile`) into the Space repo  
+5. Commit and push to Hugging Face  
+6. Your backend will be live at: `https://<username>-<space-name>.hf.space`
 
 ### Frontend (GitHub Pages)
 ```bash
@@ -99,5 +97,6 @@ Contributions are welcome!
 
 ## 📄 License
 MIT License (add your license file here)
+
 
 ---

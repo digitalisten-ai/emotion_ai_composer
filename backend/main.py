@@ -6,43 +6,35 @@ import os
 import sys
 import uvicorn
 
-# --- Path setup ---
-BACKEND_DIR = os.path.abspath(os.path.dirname(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(BACKEND_DIR, os.pardir))
-if BACKEND_DIR not in sys.path:
-    sys.path.append(BACKEND_DIR)
+# --- Path setup (Space root) ---
+APP_DIR = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
+if APP_DIR not in sys.path:
+    sys.path.append(APP_DIR)
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
-# --- Robust import for inference ---
+# --- Import inference robustly (same dir first, then scripts/) ---
 try:
-    # If backend is a package (uvicorn backend.main:app)
-    from . import inference  # type: ignore
+    import inference  # type: ignore
 except Exception:
     try:
-        # Absolute package import
-        import backend.inference as inference  # type: ignore
-    except Exception:
-        try:
-            # Running directly inside backend dir (uvicorn main:app)
-            import inference  # type: ignore
-        except Exception:
-            # Fall back to project-level scripts package
-            from scripts import inference  # type: ignore
+        from scripts import inference  # type: ignore
+    except Exception as e:
+        raise RuntimeError(f"Could not import inference module: {e}")
 
 # --- CORS ---
 ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://192.168.1.184:8080",
-    # Lägg till dina prod-URLs här (t.ex. GitHub Pages + Render)
-    # "https://digitalisten-ai.github.io",
-    # "https://digitalisten-ai.github.io/<repo>",
+    # Local dev
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:8080", "http://127.0.0.1:8080",
+    # Production (GitHub Pages)
+    "https://digitalisten-ai.github.io",
+    # Lägg till din repo-sökväg om du använder projekt-Pages (ex):
+    # "https://digitalisten-ai.github.io/ditt-frontend-repo",
 ]
 
-app = FastAPI()
+app = FastAPI(title="Emotion AI Composer API", version="1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -53,7 +45,7 @@ app.add_middleware(
 
 # --- Static assets (mp3) ---
 asset_candidates = [
-    os.path.join(BACKEND_DIR, "assets"),
+    os.path.join(APP_DIR, "assets"),
     os.path.join(PROJECT_ROOT, "assets"),
 ]
 for p in asset_candidates:
@@ -68,6 +60,11 @@ class PredictOut(BaseModel):
     audio: str
 
 
+@app.get("/")
+def root():
+    return {"name": "Emotion AI Composer API", "status": "running"}
+
+
 @app.get("/api/health")
 def health():
     try:
@@ -75,7 +72,6 @@ def health():
         if loader is None:
             raise RuntimeError("No model loader found in inference module")
         _ = loader()  # trigger model load
-        # Optional: return which MODEL_PATH was used if available
         model_path = getattr(inference, "MODEL_PATH", None)
         return {"status": "ok", "model_path": model_path}
     except Exception as e:
@@ -105,4 +101,5 @@ async def predict(image: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)), reload=True)
+    # Spaces expects port 7860 by default
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 7860)))
